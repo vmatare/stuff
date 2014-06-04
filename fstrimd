@@ -5,6 +5,8 @@
 # - We're on AC power
 # - Both 1-minute and 5-minute load average are below the configured threshold
 #
+# Run this in a cronjob on SSDs, daily or so.
+#
 
 MAX_LOAD_AVG="0.03"
 MOUNTPOINTS="$@"
