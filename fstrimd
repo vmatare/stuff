@@ -1,0 +1,35 @@
+#!/bin/bash
+
+#
+# Run fstrim on given mountpoints when the system is idle, as defined by:
+# - We're on AC power
+# - Both 1-minute and 5-minute load average are below the configured threshold
+#
+
+MAX_LOAD_AVG="0.03"
+MOUNTPOINTS="$@"
+SLEEPTIME="2m"
+
+
+
+sleep 1m
+
+on_ac_power || SLEEPTIME="9m"
+
+system_idle() {
+	on_ac_power || return 1
+
+	local load_avg=( $(</proc/loadavg) )
+	local cpu_idle=$(echo "${load_avg[0]} < $MAX_LOAD_AVG && ${load_avg[1]} < $MAX_LOAD_AVG" | bc -l)
+	[[ $cpu_idle == 1 ]]
+	return $?
+}
+
+while ! system_idle; do
+	sleep $SLEEPTIME
+done
+
+touch /var/run/fstrimd
+for mp in $MOUNTPOINTS; do
+	ionice -c Idle fstrim $mp
+done
