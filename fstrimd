@@ -34,7 +34,7 @@ if [[ -z $1 ]]; then
 	exit 1
 fi
 for mp in $@; do
-	dev=`mount | grep -e "$mp" | cut -d ' ' -f 1`
+	dev=`mount | grep -e "^$mp on \| on $mp type " | cut -d ' ' -f 1`
 	if ! blockdev --getsize64 $dev &> /dev/null; then
 		usage
 		exit 1
