@@ -4,7 +4,7 @@ for i in "$@"; do
 	echo "File \"$i\":"
 	metaflac --list --block-number=2 "$i" \
 	| grep -e 'comment\[.*\]:' \
-	| sed -e 's/.*comment.*: /TAG_/' -e 's/=/="/' -e 's/$/"/' \
+	| sed -e 's/.*comment\[[0-9]\+\]: /TAG_/' -e 's/=/="/' -e 's/$/"/' \
 	| \
 	(
 		while read line; do
