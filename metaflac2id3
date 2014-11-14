@@ -1,0 +1,19 @@
+#!/bin/bash
+
+for i in "$@"; do
+	echo "File $i:"
+	metaflac --list --block-number=2 "$i" \
+	| grep -e 'comment\[.*\]:' \
+	| sed -e 's/.*comment.*: /TAG_/' -e 's/=/="/' -e 's/$/"/' \
+	| \
+	(
+		while read line; do
+			echo "$line"
+			eval "$line"		
+		done
+	)
+	id3ted -a "$TAG_ARTIST" -A "$TAG_ALBUM" -t "$TAG_TITLE" \
+	       -c "$TAG_COMMENT" -g "$TAG_GENRE" -T "$TAG_TRACKNUMBER" \
+		   -y "$TAG_DATE" \
+		   "${i/.flac/.mp3}"
+done
