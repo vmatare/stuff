@@ -1,0 +1,47 @@
+#!/bin/bash
+
+if [[ -n "$1" && "$1" != -* ]]; then
+	if [[ -f "$1/Kbuild" ]]; then
+		KDIR="$(readlink -f $1)"
+	elif [[ -f "/usr/src/$1/Kbuild" ]]; then
+		KDIR="$(readlink -f /usr/src/$1)"
+	elif [[ -f "/usr/src/linux-$1/Kbuild" ]]; then
+		KDIR="$(readlink -f /usr/src/linux-$1)"
+	else
+		echo "Couldn't find kernel sources matching the version string \`$1' in /usr/src."
+		exit 1
+	fi
+
+	shift
+
+	if [[ $(readlink -e "/usr/src/linux") != "$KDIR" ]]; then
+		echo "Creating kernel tree symlink for $KDIR..."
+		ln -is -T $(basename "$KDIR") "/usr/src/linux"
+	fi
+
+elif [[ -L /usr/src/linux ]]; then
+	KDIR="$(readlink -e /usr/src/linux)" \
+	 || exit $?
+	echo "/usr/src/linux is a symlink to $KDIR."
+fi
+
+[[ -r /boot/initrd-* ]] \
+ && DRACUT=$(which dracut)
+
+
+echo "Building kernel in $KDIR..."
+echo
+
+make -C "$KDIR" oldconfig \
+ && make -C "$KDIR" prepare \
+ && KVER=$(<"$KDIR/include/config/kernel.release") \
+ || exit $?
+
+make -C "$KDIR" $@ \
+ && make -C "$KDIR" modules_install \
+ && emerge @module-rebuild \
+ && make -C "$KDIR" install \
+ && { [[ -z $DRACUT ]] || $DRACUT --kver $KVER; } \
+ && grub-mkconfig -o /boot/grub/grub.cfg
+
+exit $?
