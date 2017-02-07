@@ -25,7 +25,7 @@ elif [[ -L /usr/src/linux ]]; then
 	echo "/usr/src/linux is a symlink to $KDIR."
 fi
 
-[[ -r /boot/initrd-* ]] \
+[[ -n $(find /boot -name "initramfs-*") ]] \
  && DRACUT=$(which dracut)
 
 
