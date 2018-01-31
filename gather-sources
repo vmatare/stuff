@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [[ -z $* ]]; then
+	echo "Produce a list of header and source files for use in QtCreator plain projects"
+	echo "Usage: $(basename $0) SOURCE-FOLDER..."
+	exit 1
+fi
+
+find $@ \
+ \! -path '*.objs_*' \
+ -a \( \
+ 	-name "*.cpp" \
+	-o -name "*.cc" \
+	-o -name "*.h" \
+	-o -name "*.hpp"
+ \)

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+file=$1
+shift
+
+make $@ VERBOSE=1 \
+|& tee >(
+	egrep '^gcc' \
+	| tr " " "\n" \
+	| egrep '^-I' \
+	| sort \
+	| uniq \
+	| sed 's/^-I//' \
+	> $file
+)
+
