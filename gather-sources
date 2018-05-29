@@ -12,5 +12,5 @@ find $@ \
  	-name "*.cpp" \
 	-o -name "*.cc" \
 	-o -name "*.h" \
-	-o -name "*.hpp"
+	-o -name "*.hpp" \
  \)
