@@ -1,0 +1,72 @@
+#!/bin/bash
+
+set_nv() {
+	echo $1 > /proc/acpi/bbswitch
+	i=0
+	while ! grep -q "$1$" /proc/acpi/bbswitch; do
+		let i++
+		sleep 1
+		[[ $i > 5 ]] && break
+	done
+	grep "$1$" /proc/acpi/bbswitch \
+	 || echo "failed to toggle bbswitch $1." 2>&1
+	return $?
+}
+
+disable_nv() {
+	local THINKFAN=
+	if systemctl status thinkfan > /dev/null && [[ $(readlink /etc/thinkfan.conf) == *thinkfan.conf.nv ]]; then
+		systemctl stop thinkfan
+		THINKFAN=1
+		ln -fs /etc/thinkfan.conf.intel /etc/thinkfan.conf
+		systemctl start thinkfan
+	fi
+	
+	( [[ -z $(lsmod | grep nvidia) ]] \
+	   || ( modprobe -r nvidia_drm; modprobe -r nvidia_modeset; modprobe -r nvidia ) \
+	) \
+	&& \
+	( [[ -z $(lsmod | grep nouveau) ]] \
+	   || modprobe -r nouveau \
+	) \
+	&& \
+	set_nv OFF
+
+	if [[ -n $THINKFAN ]]; then
+		systemctl start thinkfan
+	fi
+
+	return $?
+}
+
+enable_nv() {
+	modprobe -r nouveau \
+	 && set_nv ON \
+	 && ( modprobe nvidia_drm || modprobe nvidia )
+	rv=$?
+	if [[ $rv == 0 ]] && systemctl status thinkfan && [[ $(readlink /etc/thinkfan.conf) == *thinkfan.conf.intel ]]; then
+		systemctl stop thinkfan
+		ln -fs /etc/thinkfan.conf.nv /etc/thinkfan.conf
+		systemctl start thinkfan
+		systemctl status thinkfan
+	fi
+	return $rv
+}
+
+case $1 in
+OFF|off)
+	disable_nv
+	exit $?
+;;
+ON|on)
+	enable_nv
+	exit $?
+;;
+AUTO|auto)
+	disable_nv || enable_nv
+	exit $?
+;;
+*)
+	echo "Usage: $(basename $0) OFF|ON|off|onn"
+;;
+esac
