@@ -32,6 +32,9 @@ fi
 echo "Building kernel in $KDIR..."
 echo
 
+[[ -f "$KDIR/.config" ]] \
+ || gunzip -c /proc/config.gz > "$KDIR/.config"
+
 make -C "$KDIR" oldconfig \
  && make -C "$KDIR" prepare \
  && KVER=$(<"$KDIR/include/config/kernel.release") \
@@ -41,7 +44,7 @@ make -C "$KDIR" $@ \
  && make -C "$KDIR" modules_install \
  && emerge @module-rebuild \
  && make -C "$KDIR" install \
- && { [[ -z $DRACUT ]] || $DRACUT --kver $KVER; } \
- && grub-mkconfig -o /boot/grub/grub.cfg
+# && { [[ -z $DRACUT ]] || $DRACUT -f --kver $KVER /boot/initramfs-$KVER.img; } \
+# && grub-mkconfig -o /boot/grub/grub.cfg
 
 exit $?
